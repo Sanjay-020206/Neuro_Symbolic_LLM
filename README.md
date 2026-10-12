@@ -162,21 +162,56 @@ Arun has no existing loan.
        LOGIC-CONSTRAINED REASONING
 ===========================================================================
 
+USER INPUT:
+
+A customer can receive an instant loan approval if the customer
+has a credit score of at least 700, has a monthly income of at least
+50000, and has no existing loan.
+
+Arun has a credit score of 750.
+Arun has a monthly income of 60000.
+Arun has no existing loan.
+
+Can Arun receive instant loan approval?
+
+
+---------------------------------------------------------------------------
 1. NEURAL KNOWLEDGE EXTRACTION
+---------------------------------------------------------------------------
+
 FACTS:
   Arun → credit_score = 750
   Arun → monthly_income = 60000
   Arun → existing_loan = False
 
 RULES:
+
   Rule 1:
     credit_score >= 700
     monthly_income >= 50000
     existing_loan == False
-    → eligible = True
+    → instant_loan_approval = True
 
 ---------------------------------------------------------------------------
 2. SYMBOLIC REASONING
+---------------------------------------------------------------------------
+
+KNOWLEDGE GRAPH
+------------------------------------------------------------
+entity:Arun --[HAS_FACT]--> fact:0
+entity:Arun --[HAS_FACT]--> fact:1
+entity:Arun --[HAS_FACT]--> fact:2
+fact:0 --[HAS_VALUE]--> value:0
+fact:1 --[HAS_VALUE]--> value:1
+fact:2 --[HAS_VALUE]--> value:2
+rule:0 --[HAS_CONDITION]--> condition:0:0
+rule:0 --[HAS_CONDITION]--> condition:0:1
+rule:0 --[HAS_CONDITION]--> condition:0:2
+rule:0 --[CONCLUDES]--> conclusion:0
+------------------------------------------------------------
+Total nodes: 12
+Total edges: 10
+
 Rule 1:
   ✓ credit_score >= 700 (actual = 750)
   ✓ monthly_income >= 50000 (actual = 60000)
@@ -185,15 +220,19 @@ Rule 1:
 
 ---------------------------------------------------------------------------
 3. LOGIC-CONSTRAINT VERIFICATION
+---------------------------------------------------------------------------
 ✓ All logical constraints satisfied.
 
 ---------------------------------------------------------------------------
 4. FINAL DECISION
-eligible = True
+---------------------------------------------------------------------------
+instant_loan_approval = True
 
 ---------------------------------------------------------------------------
 5. EXPLAINABLE REASONING
+---------------------------------------------------------------------------
 All logical constraints were satisfied, therefore the conclusion was derived by the symbolic engine.
+
 ===========================================================================
 ```
 
