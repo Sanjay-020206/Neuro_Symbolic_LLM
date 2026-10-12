@@ -443,31 +443,34 @@ if run_btn or "last_result" in st.session_state:
 
     # Top Status Banner
     if is_pass:
-        st.markdown(f"""
-        <div class="banner-pass">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <span class="badge-pass">STATUS: {status}</span>
-                    <h2 style="margin: 8px 0 4px 0; color: #10b981; font-weight: 800;">Decision: {result['decision']}</h2>
-                    <p style="margin: 0; color: #a7f3d0; font-size: 0.95rem;">{result['explanation']}</p>
-                </div>
-                <div style="font-size: 3.5rem;">✅</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        banner_html = (
+            '<div class="banner-pass">'
+            '<div style="display: flex; justify-content: space-between; align-items: center;">'
+            '<div>'
+            f'<span class="badge-pass">STATUS: {status}</span>'
+            f'<h2 style="margin: 8px 0 4px 0; color: #10b981; font-weight: 800;">Decision: {result["decision"]}</h2>'
+            f'<p style="margin: 0; color: #a7f3d0; font-size: 0.95rem;">{result["explanation"]}</p>'
+            '</div>'
+            '<div style="font-size: 3.5rem;">✅</div>'
+            '</div>'
+            '</div>'
+        )
+        st.markdown(banner_html, unsafe_allow_html=True)
     else:
-        st.markdown(f"""
-        <div class="banner-fail">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <span class="badge-fail">STATUS: {status}</span>
-                    <h2 style="margin: 8px 0 4px 0; color: #ef4444; font-weight: 800;">Decision: {result['decision']}</h2>
-                    <p style="margin: 0; color: #fecaca; font-size: 0.95rem;">{result['explanation'].splitlines()[0]}</p>
-                </div>
-                <div style="font-size: 3.5rem;">❌</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        first_line = result["explanation"].splitlines()[0] if result["explanation"] else ""
+        banner_html = (
+            '<div class="banner-fail">'
+            '<div style="display: flex; justify-content: space-between; align-items: center;">'
+            '<div>'
+            f'<span class="badge-fail">STATUS: {status}</span>'
+            f'<h2 style="margin: 8px 0 4px 0; color: #ef4444; font-weight: 800;">Decision: {result["decision"]}</h2>'
+            f'<p style="margin: 0; color: #fecaca; font-size: 0.95rem;">{first_line}</p>'
+            '</div>'
+            '<div style="font-size: 3.5rem;">❌</div>'
+            '</div>'
+            '</div>'
+        )
+        st.markdown(banner_html, unsafe_allow_html=True)
 
     # Metric Row
     m_col1, m_col2, m_col3, m_col4 = st.columns(4)
@@ -538,41 +541,42 @@ if run_btn or "last_result" in st.session_state:
                 
                 table_rows.append({
                     "Attribute": cond["attribute"],
-                    "Operator": f"`{cond['operator']}`",
+                    "Operator": cond["operator"],
                     "Expected Value": str(cond["expected"]),
                     "Actual Ingested Fact": str(cond["actual"]) if cond["actual"] is not None else "(None)",
                     "Evaluated Entity": cond.get("entity") or "N/A",
                     "Condition Status": badge
                 })
 
-            # Render HTML Table for styling
-            html_table = """
-            <table style="width:100%; border-collapse: collapse; margin-bottom: 1.5rem;">
-                <thead>
-                    <tr style="border-bottom: 1px solid #334155; text-align: left; color: #94a3b8; font-size: 0.8rem; text-transform: uppercase;">
-                        <th style="padding: 10px;">Attribute</th>
-                        <th style="padding: 10px;">Operator</th>
-                        <th style="padding: 10px;">Expected Threshold</th>
-                        <th style="padding: 10px;">Actual Fact in KG</th>
-                        <th style="padding: 10px;">Entity</th>
-                        <th style="padding: 10px;">Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-            """
+            # Render HTML Table with zero leading indentation to prevent markdown code-block interpretation
+            table_html = (
+                '<div style="overflow-x: auto; margin-bottom: 1.5rem;">'
+                '<table style="width: 100%; border-collapse: collapse; background: rgba(15, 23, 42, 0.7); border: 1px solid #334155; border-radius: 10px; overflow: hidden;">'
+                '<thead>'
+                '<tr style="background: rgba(30, 41, 59, 0.85); border-bottom: 2px solid #334155; text-align: left; color: #94a3b8; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">'
+                '<th style="padding: 12px 16px;">Attribute</th>'
+                '<th style="padding: 12px 16px;">Operator</th>'
+                '<th style="padding: 12px 16px;">Expected Threshold</th>'
+                '<th style="padding: 12px 16px;">Actual Fact in KG</th>'
+                '<th style="padding: 12px 16px;">Entity</th>'
+                '<th style="padding: 12px 16px; text-align: center;">Status</th>'
+                '</tr>'
+                '</thead>'
+                '<tbody>'
+            )
             for row in table_rows:
-                html_table += f"""
-                    <tr style="border-bottom: 1px solid #1e293b; font-size: 0.9rem;">
-                        <td style="padding: 10px; font-weight:600; color:#f8fafc;">{row['Attribute']}</td>
-                        <td style="padding: 10px; color:#cbd5e1;"><code>{row['Operator']}</code></td>
-                        <td style="padding: 10px; color:#cbd5e1;">{row['Expected Value']}</td>
-                        <td style="padding: 10px; color:#cbd5e1;">{row['Actual Ingested Fact']}</td>
-                        <td style="padding: 10px; color:#94a3b8;">{row['Evaluated Entity']}</td>
-                        <td style="padding: 10px;">{row['Condition Status']}</td>
-                    </tr>
-                """
-            html_table += "</tbody></table>"
-            st.markdown(html_table, unsafe_allow_html=True)
+                table_html += (
+                    '<tr style="border-bottom: 1px solid rgba(51, 65, 85, 0.6); font-size: 0.9rem;">'
+                    f'<td style="padding: 12px 16px; font-weight: 600; color: #f8fafc;">{row["Attribute"]}</td>'
+                    f'<td style="padding: 12px 16px; color: #cbd5e1;"><code style="background: #1e293b; color: #93c5fd; padding: 3px 8px; border-radius: 4px; font-weight: 600;">{row["Operator"]}</code></td>'
+                    f'<td style="padding: 12px 16px; color: #cbd5e1; font-weight: 500;">{row["Expected Value"]}</td>'
+                    f'<td style="padding: 12px 16px; color: #cbd5e1; font-weight: 500;">{row["Actual Ingested Fact"]}</td>'
+                    f'<td style="padding: 12px 16px; color: #94a3b8;">{row["Evaluated Entity"]}</td>'
+                    f'<td style="padding: 12px 16px; text-align: center;">{row["Condition Status"]}</td>'
+                    '</tr>'
+                )
+            table_html += '</tbody></table></div>'
+            st.markdown(table_html, unsafe_allow_html=True)
 
     # TAB 3: EXTRACTED SCHEMA (JSON)
     with tab_knowledge:
