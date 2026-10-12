@@ -218,7 +218,7 @@ All logical constraints were satisfied, therefore the conclusion was derived by 
 
 ### 2. Install Dependencies
 ```bash
-pip install torch transformers accelerate sentencepiece ipywidgets jupyter
+pip install torch transformers accelerate sentencepiece ipywidgets jupyter streamlit networkx
 ```
 
 - **Model Used**: [`Qwen/Qwen2.5-1.5B-Instruct`](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct) (automatically downloaded from Hugging Face on initial run)
@@ -227,24 +227,29 @@ pip install torch transformers accelerate sentencepiece ipywidgets jupyter
 
 ## 💻 Usage & Quickstart
 
-### Option 1: Jupyter Notebook / JupyterLab
+### Option 1: 🚀 Interactive Streamlit Web Interface (Recommended)
+Launch the interactive web application featuring physics-based Knowledge Graph visualization, benchmark scenario selectors, and live condition matrix:
+```bash
+streamlit run app.py
+```
+- Select from 5 benchmark scenarios or write custom scenarios.
+- Choose between **Fast Mode** (instant demo) and **Live Neural Model** (`Qwen 2.5-1.5B`).
+- Explore the interactive drag-and-drop Knowledge Graph (Vis.js).
+- Inspect deterministic root-cause audit trail and download JSON schemas.
+
+### Option 2: Jupyter Notebook / JupyterLab
 Launch the notebook directly from your terminal:
 ```bash
-# Clone the repository (if not already cloned)
-git clone https://github.com/Sanjay-020206/Neuro_Symbolic_LLM.git
-cd Neuro_Symbolic_LLM
-
-# Start Jupyter Notebook
 jupyter notebook "neuro_sym (1).ipynb"
 ```
 
-### Option 2: VS Code
+### Option 3: VS Code
 1. Open the repository folder in VS Code.
 2. Ensure the **Python** and **Jupyter** extensions are installed.
 3. Open `neuro_sym (1).ipynb`.
 4. Select your Python virtual environment / kernel and run the cells.
 
-### Option 3: Google Colab
+### Option 4: Google Colab
 1. Upload `neuro_sym (1).ipynb` to [Google Colab](https://colab.research.google.com/).
 2. Select **Runtime** → **Change runtime type** → **T4 GPU**.
 3. Execute all cells from top to bottom.
