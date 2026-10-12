@@ -212,17 +212,39 @@ All logical constraints were satisfied, therefore the conclusion was derived by 
 
 ## 📦 Requirements & Installation
 
+### 1. Prerequisites
+- **Python**: 3.9 or higher recommended
+- **Hardware**: CUDA-compatible GPU recommended (e.g., NVIDIA T4 / RTX series), or Google Colab with GPU runtime. CPU execution is supported but will be slower.
+
+### 2. Install Dependencies
 ```bash
-pip install torch transformers accelerate sentencepiece
+pip install torch transformers accelerate sentencepiece ipywidgets jupyter
 ```
 
-- **Model Used**: [`Qwen/Qwen2.5-1.5B-Instruct`](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct)
+- **Model Used**: [`Qwen/Qwen2.5-1.5B-Instruct`](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct) (automatically downloaded from Hugging Face on initial run)
 
 ---
 
-## 💻 Usage
+## 💻 Usage & Quickstart
 
-Run the Jupyter Notebook:
+### Option 1: Jupyter Notebook / JupyterLab
+Launch the notebook directly from your terminal:
 ```bash
-jupyter notebook neuro_sym.ipynb
+# Clone the repository (if not already cloned)
+git clone https://github.com/Sanjay-020206/Neuro_Symbolic_LLM.git
+cd Neuro_Symbolic_LLM
+
+# Start Jupyter Notebook
+jupyter notebook "neuro_sym (1).ipynb"
 ```
+
+### Option 2: VS Code
+1. Open the repository folder in VS Code.
+2. Ensure the **Python** and **Jupyter** extensions are installed.
+3. Open `neuro_sym (1).ipynb`.
+4. Select your Python virtual environment / kernel and run the cells.
+
+### Option 3: Google Colab
+1. Upload `neuro_sym (1).ipynb` to [Google Colab](https://colab.research.google.com/).
+2. Select **Runtime** → **Change runtime type** → **T4 GPU**.
+3. Execute all cells from top to bottom.
