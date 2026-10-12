@@ -472,43 +472,53 @@ def run_pipeline(user_input: str, custom_knowledge: dict = None, model=None, tok
 
 
 def heuristic_extract(text: str) -> dict:
-    """Lightweight rule & fact extractor for ad-hoc custom queries without downloading 1.5GB model weights."""
+    """Robust rule & fact extractor for arbitrary custom queries and benchmarks."""
     lines = [l.strip() for l in text.split("\n") if l.strip()]
     facts = []
-    conditions = []
-    conclusion = {"attribute": "decision", "value": True}
-
-    # Attempt to extract subject name
-    subject = "Subject"
+    rule_lines = []
+    
+    # 1. Separate fact statements (lines starting with a named Entity like 'Arun has...') from rule definitions
+    subject = "Customer"
     for line in lines:
-        m = re.match(r"^([A-Z][a-z]+)\s+has\s+([a-zA-Z_ ]+)\s+(?:of\s+)?(\d+(?:\.\d+)?|true|false)", line, re.I)
-        if m:
-            subject = m.group(1)
-            attr = m.group(2).strip().lower().replace(" ", "_")
-            val = m.group(3)
+        m_entity = re.match(r"^([A-Z][a-z]+)\s+has\s+(?:a\s+|an\s+)?([a-zA-Z_ ]+?)\s+(?:of\s+)?(\d+(?:\.\d+)?|true|false)\.?$", line, re.I)
+        if m_entity:
+            subject = m_entity.group(1)
+            attr = m_entity.group(2).strip().lower().replace(" ", "_")
+            val = m_entity.group(3)
             facts.append({"entity": subject, "attribute": attr, "value": val})
             continue
 
-        m_no = re.match(r"^([A-Z][a-z]+)\s+has\s+no\s+([a-zA-Z_ ]+)", line, re.I)
+        m_no = re.match(r"^([A-Z][a-z]+)\s+has\s+no\s+([a-zA-Z_ ]+?)\.?$", line, re.I)
         if m_no:
             subject = m_no.group(1)
             attr = m_no.group(2).strip().lower().replace(" ", "_")
             facts.append({"entity": subject, "attribute": attr, "value": False})
             continue
 
-    # Extract conditions from "at least", "at most", "more than", etc.
-    for line in lines:
-        for match in re.finditer(r"([a-zA-Z_ ]+)\s+of\s+(at least|at most|more than|less than|no)\s+(\d+(?:\.\d+)?|true|false)?", line, re.I):
-            attr = match.group(1).strip().lower().replace(" ", "_").replace("the_customer_has_a_", "").replace("has_a_", "")
-            phrase = match.group(2).lower()
-            val = match.group(3) if match.group(3) else "0"
-            op = ">=" if phrase == "at least" else "<=" if phrase == "at most" else ">" if phrase == "more than" else "<" if phrase == "less than" else "=="
-            if phrase == "no":
-                op = "=="
-                val = "false"
-            conditions.append({"attribute": attr, "operator": op, "value": val})
+        # Non-fact lines belong to rule context or question
+        if not re.match(r"^(?:Can|Is|Does)\s+", line, re.I):
+            rule_lines.append(line)
 
-    # Fallback default if not detected
+    rule_text = " ".join(rule_lines)
+
+    # 2. Extract conditions from rule context only
+    conditions = []
+    for m in re.finditer(r"has\s+(?:a\s+|an\s+)?([a-zA-Z_ ]+?)\s+(?:of\s+)?(at least|at most|more than|less than)\s+(\d+(?:\.\d+)?)", rule_text, re.I):
+        attr = m.group(1).strip().lower().replace(" ", "_")
+        op_str = m.group(2).lower()
+        val = float(m.group(3)) if "." in m.group(3) else int(m.group(3))
+        op = ">=" if op_str == "at least" else "<=" if op_str == "at most" else ">" if op_str == "more than" else "<"
+        conditions.append({"attribute": attr, "operator": op, "value": val})
+
+    for m in re.finditer(r"has\s+no\s+([a-zA-Z_ ]+?)(?:,|\.|\sand|\sif|$)", rule_text, re.I):
+        attr = m.group(1).strip().lower().replace(" ", "_")
+        conditions.append({"attribute": attr, "operator": "==", "value": False})
+
+    # Conclusion determination from rule text
+    conclusion_attr = "instant_loan_approval" if "instant loan" in text.lower() else "eligible"
+    conclusion = {"attribute": conclusion_attr, "value": True}
+
+    # Fallbacks if text format is non-standard
     if not facts:
         facts = [{"entity": subject, "attribute": "score", "value": 100}]
     if not conditions:
@@ -526,17 +536,56 @@ def heuristic_extract(text: str) -> dict:
 
 
 def extract_with_llm(text: str, model, tokenizer) -> str:
-    """Invokes Qwen2.5-1.5B-Instruct to extract facts and rules into strict JSON."""
+    """Invokes Qwen2.5-1.5B-Instruct to extract facts and rules with the notebook's strict prompt."""
     import torch
     system_prompt = """You are a strict knowledge extraction engine.
-Convert the natural-language scenario into structured JSON.
-Return ONLY valid JSON matching this schema:
+
+Your task is to convert ANY natural-language scenario into structured JSON.
+
+IMPORTANT:
+1. Extract EVERY factual statement.
+2. Extract EVERY condition in EVERY rule.
+3. Do NOT invent facts.
+4. Do NOT change operators.
+5. "at least" means >=.
+6. "at most" means <=.
+7. "more than" means >.
+8. "less than" means <.
+9. "no X" means X == false.
+10. "has X" or "completed X" means X == true when used as a condition.
+11. Preserve the actual numeric values from the facts and conditions.
+12. The final decision must be determined by the symbolic engine, NOT by you.
+    The rule's conclusion value MUST be true (the target positive outcome when conditions hold).
+
+Return ONLY valid JSON.
+No explanation.
+No markdown.
+No text before or after JSON.
+
+Use EXACTLY this structure:
 {
-  "facts": [{"entity": "Arun", "attribute": "credit_score", "value": 750}],
-  "rules": [{
-    "conditions": [{"attribute": "credit_score", "operator": ">=", "value": 700}],
-    "conclusion": {"attribute": "eligible", "value": true}
-  }]
+  "facts": [
+    {
+      "entity": "Arun",
+      "attribute": "credit_score",
+      "value": 750
+    }
+  ],
+  "rules": [
+    {
+      "conditions": [
+        {
+          "attribute": "credit_score",
+          "operator": ">=",
+          "value": 700
+        }
+      ],
+      "conclusion": {
+        "attribute": "instant_loan_approval",
+        "value": true
+      }
+    }
+  ]
 }"""
     messages = [
         {"role": "system", "content": system_prompt},
